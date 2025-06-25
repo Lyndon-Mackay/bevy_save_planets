@@ -8,7 +8,7 @@ use bevy_save::prelude::*;
 use io_adapters::WriteExtension;
 use serde::{Serialize, de::DeserializeSeed};
 
-use crate::{MoonOf, OrbitingMoons, Planet, Star};
+use crate::{MoonOf, OrbitingMoons, Planet, Star, StellarBodyOf};
 
 pub struct PlanetSavePlugin;
 
@@ -96,12 +96,16 @@ impl Pipeline for PlanetPipeline {
 pub struct PlanetPrefab {
     transform: Transform,
     moon_of: Option<MoonOf>,
+    star_of: Option<StellarBodyOf>,
 }
 
 impl MapEntities for PlanetPrefab {
     fn map_entities<E: EntityMapper>(&mut self, entity_mapper: &mut E) {
         if let Some(moon_of) = &mut self.moon_of {
             moon_of.0 = entity_mapper.get_mapped(moon_of.0);
+        }
+        if let Some(star_of) = &mut self.star_of {
+            star_of.0 = entity_mapper.get_mapped(star_of.0);
         }
     }
 }
@@ -125,6 +129,9 @@ impl Prefab for PlanetPrefab {
                 entity_comamnds.insert(SceneRoot(planet_handle));
             }
         }
+        if let Some(star_of) = self.star_of {
+            entity_comamnds.insert(star_of);
+        }
     }
 
     fn extract(builder: SnapshotBuilder) -> SnapshotBuilder {
@@ -132,6 +139,7 @@ impl Prefab for PlanetPrefab {
             Some(PlanetPrefab {
                 transform: *entity.get::<Transform>()?,
                 moon_of: entity.get::<MoonOf>().cloned(),
+                star_of: entity.get::<StellarBodyOf>().cloned(),
             })
         })
     }

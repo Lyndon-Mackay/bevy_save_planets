@@ -8,13 +8,15 @@ use bevy_save::prelude::*;
 use io_adapters::WriteExtension;
 use serde::{Serialize, de::DeserializeSeed};
 
-use crate::{MoonOf, OrbitingMoons, Planet};
+use crate::{MoonOf, OrbitingMoons, Planet, Star};
 
 pub struct PlanetSavePlugin;
 
 impl Plugin for PlanetSavePlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(SavePlugins).register_type::<PlanetPrefab>();
+        app.add_plugins(SavePlugins)
+            .register_type::<PlanetPrefab>()
+            .register_type::<StarPrefab>();
     }
 }
 
@@ -70,8 +72,9 @@ impl Pipeline for PlanetPipeline {
             .filter(SceneFilter::Denylist(deny_list))
             .extract_all_resources()
             .allow_all()
-            .extract_entities_matching(|e| e.contains::<OrbitingMoons>())
+            // .extract_entities_matching(|e| e.contains::<OrbitingMoons>())
             .extract_all_prefabs::<PlanetPrefab>()
+            .extract_all_prefabs::<StarPrefab>()
             // .extract_entities_matching(|e| e.contains::<Save>())
             .build()
     }
@@ -81,8 +84,9 @@ impl Pipeline for PlanetPipeline {
         snapshot
             .applier(world)
             // .entity_map(&mut hash_map)
-            .despawn::<With<Planet>>()
+            .despawn::<Or<(With<Planet>, With<Star>)>>()
             .prefab::<PlanetPrefab>()
+            .prefab::<StarPrefab>()
             .apply()
     }
 }
@@ -96,10 +100,8 @@ pub struct PlanetPrefab {
 
 impl MapEntities for PlanetPrefab {
     fn map_entities<E: EntityMapper>(&mut self, entity_mapper: &mut E) {
-        if let Some(mut moon) = self.moon_of {
-            let original = moon.0;
-            moon.0 = entity_mapper.get_mapped(moon.0);
-            info!("{:?} {:?}", original, moon.0);
+        if let Some(moon_of) = &mut self.moon_of {
+            moon_of.0 = entity_mapper.get_mapped(moon_of.0);
         }
     }
 }
@@ -129,7 +131,39 @@ impl Prefab for PlanetPrefab {
         builder.extract_prefab(|entity| {
             Some(PlanetPrefab {
                 transform: *entity.get::<Transform>()?,
-                moon_of: entity.get::<MoonOf>().copied(),
+                moon_of: entity.get::<MoonOf>().cloned(),
+            })
+        })
+    }
+}
+
+#[derive(Reflect, Debug)]
+#[reflect(MapEntities)]
+pub struct StarPrefab {
+    transform: Transform,
+}
+
+impl MapEntities for StarPrefab {
+    fn map_entities<E: EntityMapper>(&mut self, entity_mapper: &mut E) {}
+}
+
+impl Prefab for StarPrefab {
+    type Marker = Star;
+
+    fn spawn(self, target: Entity, world: &mut World) {
+        let asset_server = world.get_resource::<AssetServer>().unwrap().clone();
+        let mut entity_comamnds = world.entity_mut(target);
+
+        let star_handle = asset_server.load(GltfAssetLabel::Scene(0).from_asset("star.glb"));
+        entity_comamnds.insert((Planet, self.transform));
+
+        entity_comamnds.insert(SceneRoot(star_handle));
+    }
+
+    fn extract(builder: SnapshotBuilder) -> SnapshotBuilder {
+        builder.extract_prefab(|entity| {
+            Some(StarPrefab {
+                transform: *entity.get::<Transform>()?,
             })
         })
     }

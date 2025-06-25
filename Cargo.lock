@@ -1289,7 +1289,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_save"
-version = "0.18.0"
+version = "0.18.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4dba9f3516a10dc2de762a80d5c5369b11a994a92835fd43374d5d0dac036931"
 dependencies = [
  "async-std",
  "bevy",

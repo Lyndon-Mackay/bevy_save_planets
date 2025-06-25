@@ -6,7 +6,8 @@ edition = "2024"
 [dependencies]
 bevy = "0.16.1"
 
-bevy_save = { path="../bevy_save" }
+bevy_save = {version ="0.18.1" ,features = ["bevy_asset"]}
+
 
 bevy-inspector-egui = { version = "0.31.0", features = ["highlight_changes"] }
 serde = { version = "1.0.219", features = ["derive"] }

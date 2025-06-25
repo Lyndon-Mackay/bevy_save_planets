@@ -192,7 +192,7 @@ fn load(world: &mut World) {
 fn check_moon_status(mut text: Query<&mut Text, With<MoonStatus>>, moon_query: Query<&MoonOf>) {
     let mut text = text.single_mut().unwrap();
     if moon_query.single().is_ok() {
-        text.0 = "I have a moon :)".to_string();
+        text.0 = "I have a moon XD".to_string();
     } else {
         text.0 = "I want my moon back >:[".to_string();
     }
